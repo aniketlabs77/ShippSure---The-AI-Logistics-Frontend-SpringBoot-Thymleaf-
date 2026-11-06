@@ -1,0 +1,42 @@
+spring.application.name=ShippSure-FrontEnd 
+
+server.port=2222
+
+# Groq API configuration (OpenAI-compatible)
+spring.ai.openai.base-url=https://api.groq.com/openai/v1
+spring.ai.openai.api-key=${GROQ_API_KEY:your_groq_api_key_here}
+spring.ai.openai.chat.options.model=openai/gpt-oss-120b
+
+# File Upload Limits
+spring.servlet.multipart.max-file-size=100MB  
+spring.servlet.multipart.max-request-size=100MB
+
+# ===============================
+# Razorpay Payment Gateway
+# ===============================
+razorpay.key.id=${RAZORPAY_KEY_ID:your_razorpay_key_id_here}
+razorpay.key.secret=${RAZORPAY_KEY_SECRET:your_razorpay_key_secret_here}
+
+# ===============================
+# Gmail SMTP Configuration
+# ===============================
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=${MAIL_USERNAME:your_email@gmail.com}
+spring.mail.password=${MAIL_PASSWORD:your_gmail_app_password_here}
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.properties.mail.smtp.starttls.required=true
+
+# ===============================
+# Security - Google OAuth2
+# ===============================
+spring.security.oauth2.client.registration.google.client-id=${GOOGLE_CLIENT_ID:your_google_client_id_here}
+spring.security.oauth2.client.registration.google.client-secret=${GOOGLE_CLIENT_SECRET:your_google_client_secret_here}
+spring.security.oauth2.client.registration.google.scope=profile,email
+
+# ===============================
+# Service URLs
+# ===============================
+frontend_url=${FRONTEND_URL:http://localhost:2222}
+rest_webservice_url=${BACKEND_URL:http://localhost:3333}

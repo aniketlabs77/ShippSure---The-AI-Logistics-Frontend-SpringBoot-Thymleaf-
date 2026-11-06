@@ -1,29 +1,34 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-<meta charset="UTF-8">
-<title>Driver Dashboard — AI Logistics</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-<link rel="stylesheet" href="/assets/css/style.css">
+  <meta charset="UTF-8">
+  <title>Driver Dashboard — ShippSure</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" th:href="@{/assets/css/style.css}">
 </head>
 <body>
 <div class="app-shell">
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
   <aside class="app-sidebar" id="appSidebar">
-    <a href="./index.html" class="navbar-brand mb-4 d-inline-flex"><span class="brand-mark">AL</span>AI Logistics</a>
+    <a th:href="@{/}" class="navbar-brand mb-4 d-inline-flex"><span class="brand-mark">SS</span>ShippSure</a>
+    
     <div class="sidebar-section-label">Driver</div>
-    <a href="./dashboard.html" class="sidebar-link active"><i class="bi bi-grid-1x2"></i>My Deliveries</a>
+    <a th:href="@{/driver/driver-dashboard}" class="sidebar-link active"><i class="bi bi-grid-1x2"></i>My Deliveries</a>
+    <a th:href="@{/driver/driver-earnings}" class="sidebar-link"><i class="bi bi-wallet2"></i>My Earnings</a>
+    
+    <div class="sidebar-section-label">
+      Duty Status [<small th:text="${session.driver != null ? session.driver.rideStatus : 'OFF'}"></small>]
+    </div>
+    <a th:href="@{/driver/SetRideStatus}" class="sidebar-link" th:if="${session.driver != null}">
+      <i class="bi bi-power me-1"></i>
+      <span th:if="${session.driver.rideStatus=='Busy'}">Go ON Duty (Free)</span>
+      <span th:if="${session.driver.rideStatus=='Free'}">Go OFF Duty (Busy)</span>
+    </a>
+    
     <div class="sidebar-section-label">Account</div>
     <a th:href="@{/logout}" class="sidebar-link logout-link"><i class="bi bi-box-arrow-right"></i>Log out</a>
-            <div class="sidebar-section-label">Duty Status [<small th:text="${session.driver != null ? session.driver.rideStatus : 'OFF'}"></small>]</div>
-    <a th:href="@{/driver/SetRideStatus}" class="sidebar-link" th:if="${session.driver != null}">
-        <i class="bi bi-power me-1"></i>
-        <span th:if="${session.driver.rideStatus=='Busy'}">Go ON Duty (Free)</span>
-        <span th:if="${session.driver.rideStatus=='Free'}">Go OFF Duty (Busy)</span>
-    </a>
-    </a>
   </aside>
 
   <main class="app-main">
@@ -31,26 +36,140 @@
       <div class="d-flex align-items-center gap-3">
         <button class="btn btn-sm btn-ghost-light d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
         <div>
-          <div class="fw-semibold user-name-slot">—</div>
-          <div class="small text-muted-light">Driver account</div>
+          <div class="fw-semibold user-name-slot" th:text="${driver != null ? driver.name : (session.driver != null ? session.driver.name : 'Driver')}">Driver</div>
+          <div class="small text-muted-light">
+            <span th:text="${driver != null ? driver.vehicle_type : (session.driver != null ? session.driver.vehicle_type : 'Vehicle')}">Vehicle</span> &bull; Driver Portal
+          </div>
         </div>
       </div>
-      <div class="avatar-chip user-chip-slot">—</div>
+      <div class="avatar-chip user-chip-slot" th:text="${driver != null && driver.name != null && !driver.name.isEmpty() ? #strings.substring(driver.name, 0, 1) : 'D'}">D</div>
     </div>
 
     <div class="app-content">
-      <h3 class="mb-1">Your delivery queue</h3>
-      <p class="text-muted-light mb-4">Assigned shipments ready for pickup and delivery.</p>
+      <div th:if="${error}" class="alert alert-danger py-2" th:text="${error}"></div>
+      <div th:if="${success}" class="alert alert-success py-2" th:text="${success}"></div>
 
-      <div class="row g-3" id="statCards"></div>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h3 class="mb-1">Your Delivery Queue</h3>
+          <p class="text-muted-light mb-0">Assigned shipments ready for pickup and delivery.</p>
+        </div>
+      </div>
 
-      <div class="row g-3 mt-2" id="shipmentCards"></div>
-      <div id="emptyState" class="empty-state d-none"><i class="bi bi-inbox"></i>No shipments assigned to you yet.</div>
+      <!-- 3 Key Metric Cards -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <div class="panel p-3 d-flex align-items-center gap-3">
+            <div class="stat-icon" style="background:rgba(255,138,61,.15); color:var(--amber); font-size:1.5rem; width:48px; height:48px; display:flex; align-items:center; justify-content:center; border-radius:10px;">
+              <i class="bi bi-box-seam"></i>
+            </div>
+            <div>
+              <div class="fs-4 fw-bold" th:text="${totalAssigned}">0</div>
+              <div class="small text-muted-light">Total Assigned</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="panel p-3 d-flex align-items-center gap-3">
+            <div class="stat-icon" style="background:rgba(34,193,180,.15); color:var(--teal); font-size:1.5rem; width:48px; height:48px; display:flex; align-items:center; justify-content:center; border-radius:10px;">
+              <i class="bi bi-truck"></i>
+            </div>
+            <div>
+              <div class="fs-4 fw-bold text-teal" th:text="${activeCount}">0</div>
+              <div class="small text-muted-light">Active / In Progress</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="panel p-3 d-flex align-items-center gap-3">
+            <div class="stat-icon" style="background:rgba(34,197,94,.15); color:#22c55e; font-size:1.5rem; width:48px; height:48px; display:flex; align-items:center; justify-content:center; border-radius:10px;">
+              <i class="bi bi-check2-circle"></i>
+            </div>
+            <div>
+              <div class="fs-4 fw-bold text-success" th:text="${deliveredCount}">0</div>
+              <div class="small text-muted-light">Delivered</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Pills -->
+      <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+        <span class="small text-muted-light me-2"><i class="bi bi-funnel me-1"></i>Filter:</span>
+        <a th:href="@{/driver/driver-dashboard(status='All')}"
+           th:classappend="${currentStatus == 'All' or currentStatus == null} ? 'btn-amber' : 'btn-ghost-light'"
+           class="btn btn-sm">All (<span th:text="${totalAssigned}">0</span>)</a>
+        <a th:href="@{/driver/driver-dashboard(status='Pending')}"
+           th:classappend="${currentStatus == 'Pending'} ? 'btn-amber' : 'btn-ghost-light'"
+           class="btn btn-sm">Pending</a>
+        <a th:href="@{/driver/driver-dashboard(status='InTransit')}"
+           th:classappend="${currentStatus == 'InTransit'} ? 'btn-amber' : 'btn-ghost-light'"
+           class="btn btn-sm">In Transit</a>
+        <a th:href="@{/driver/driver-dashboard(status='Delivered')}"
+           th:classappend="${currentStatus == 'Delivered'} ? 'btn-amber' : 'btn-ghost-light'"
+           class="btn btn-sm">Delivered (<span th:text="${deliveredCount}">0</span>)</a>
+      </div>
+
+      <!-- Shipments Panel -->
+      <div class="panel">
+        <div class="table-responsive" th:if="${shipments != null and !shipments.isEmpty()}">
+          <table class="table table-manifest align-middle mb-0">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Route</th>
+                <th>Customer</th>
+                <th>Vehicle</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="shipment : ${shipments}">
+                <td><span class="mono fw-semibold" th:text="'#' + ${shipment.id}">#1</span></td>
+                <td>
+                  <div class="fw-semibold">
+                    <span th:text="${shipment.pickup_address}">Pickup</span> &rarr; <span th:text="${shipment.drop_address}">Drop</span>
+                  </div>
+                  <div class="small text-muted-light" th:text="${#temporals.format(shipment.pickup_datetime, 'dd MMM yyyy, hh:mm a')}">Pickup Time</div>
+                </td>
+                <td>
+                  <div th:text="${shipment.customer_name != null ? shipment.customer_name : 'Customer'}">Customer Name</div>
+                  <div class="small text-muted-light" th:text="${shipment.customer_id != null ? shipment.customer_id : ''}">Customer Email</div>
+                </td>
+                <td th:text="${shipment.vtype}">Bike</td>
+                <td><span class="fw-bold">₹<span th:text="${shipment.amount}">0</span></span></td>
+                <td>
+                  <span th:if="${shipment.status == 'Pending'}" class="badge bg-warning text-dark">Pending</span>
+                  <span th:if="${shipment.status == 'InTransit'}" class="badge bg-info text-dark">In Transit</span>
+                  <span th:if="${shipment.status == 'Delivered'}" class="badge bg-success">Delivered</span>
+                  <span th:if="${shipment.status == 'Cancelled'}" class="badge bg-danger">Cancelled</span>
+                </td>
+                <td class="text-end">
+                  <a th:href="@{/driver/ShipmentDetails(id=${shipment.id})}" class="btn btn-sm btn-outline-amber">
+                    <i class="bi bi-geo-alt me-1"></i>Manage &amp; Update GPS
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty State -->
+        <div th:if="${shipments == null or shipments.isEmpty()}" class="p-4 text-center">
+          <i class="bi bi-inbox fs-1 text-muted-light d-block mb-2"></i>
+          <p class="text-muted-light mb-0">No shipments found for this status.</p>
+        </div>
+      </div>
+
     </div>
   </main>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="/assets/js/store.js"></script>
+<script th:src="@{/assets/js/app.js}"></script>
 </body>
 </html>

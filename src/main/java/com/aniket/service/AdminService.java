@@ -1,9 +1,9 @@
 package com.aniket.service;
 
-
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -18,10 +18,9 @@ import com.aniket.bean.Driver;
 public class AdminService {
 	
 	@Value("${rest_webservice_url}")
-	private String url ; 
+	private String url; 
 	
 	private RestTemplate rt = new RestTemplate(); 
-	
 	
 	public Admin login(Admin admin) throws RestClientException {
 		String api = "/admin/login"; 
@@ -30,23 +29,22 @@ public class AdminService {
 		return result.getBody();
 	}
 
-
 	public List<Driver> getAllDrivers(String status) {
-		String api = "/admin/getAllDrivers/" + status ; 
-		ResponseEntity<List> result = rt.exchange(url+api, HttpMethod.GET, null, List.class); 
+		String api = "/admin/getAllDrivers/" + status; 
+		ParameterizedTypeReference<List<Driver>> responseType = new ParameterizedTypeReference<List<Driver>>() {};
+		ResponseEntity<List<Driver>> result = rt.exchange(url+api, HttpMethod.GET, null, responseType); 
 		return result.getBody();
 	}
 	
 	public boolean setStatus(String status, String email) {
-		String api = "/driver/setStatus/" + status + "/" + email ; 
+		String api = "/driver/setStatus/" + status + "/" + email; 
 		ResponseEntity<Boolean> result = rt.exchange(url+api, HttpMethod.PUT, null, Boolean.class); 
 		return result.getBody(); 
 	}
 	
 	public Driver getDriver(String email) {
-		String api = "/driver/findByEmail/" + email ; 
+		String api = "/driver/findByEmail/" + email; 
 		ResponseEntity<Driver> result = rt.exchange(url+api, HttpMethod.GET, null, Driver.class); 
 		return result.getBody(); 
 	}
 }
-

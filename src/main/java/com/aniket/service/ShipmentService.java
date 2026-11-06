@@ -43,13 +43,13 @@ public class ShipmentService {
 	}
 
 	public Shipment getShipmentById(Long id) {
-		String api = "/shipment/getAllShipmentById/" + id ; 
+		String api = "/shipment/getShipmentById/" + id ; 
 		ResponseEntity<Shipment> result=restTemplate.exchange(url+api,HttpMethod.GET,null,Shipment.class);
 		return result.getBody();
 	}
 
-	public static List<Shipment> getAllShipments() {
-		String api = "shipment/getAllShipments"; 
+	public List<Shipment> getAllShipments() {
+		String api = "/shipment/getAllShipments"; 
 		ResponseEntity<List<Shipment>> res = restTemplate.exchange(
 				url+api, 
 				HttpMethod.GET, 
@@ -59,5 +59,28 @@ public class ShipmentService {
 		return res.getBody(); 
 	}
 
-
+	
+	public boolean setStatus(String status, String email, Long id) {
+		if(status.equalsIgnoreCase("Delivered")) {
+			String message = "Your Goods Delivered"; 
+			mailService.htmlMail(email, "Your Goods are delivered", message); 
+		}
+		
+		String api = "/shipment/setStatus/" + status + "/" + id ; 
+		ResponseEntity<Boolean> result = restTemplate.exchange(url+api, HttpMethod.PUT, null, Boolean.class); 
+		return Boolean.TRUE.equals(result.getBody()); 
+	}
+	
+	public List<Shipment> getAllShipmentByDriver_id(String driver_id, String status){
+		String api = "/shipment/getAllShipmentByDriver_id/" + driver_id + "/" + status ; 
+		ResponseEntity<List<Shipment>> result = restTemplate.exchange(url + api, HttpMethod.GET, null, new ParameterizedTypeReference<List<Shipment>>() {}); 
+		
+		return result.getBody(); 
+	}
+	
+	public boolean updateLocation(double current_latitude, double current_longitude, Long id) {
+		String api = "/shipment/updateLocation/" + current_latitude + "/" + current_longitude + "/" + id ; 
+		ResponseEntity<Boolean> result = restTemplate.exchange(url+api, HttpMethod.PUT, null, Boolean.class); 
+		return Boolean.TRUE.equals((result.getBody())); 
+	}
 }

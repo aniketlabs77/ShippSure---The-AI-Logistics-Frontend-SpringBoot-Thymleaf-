@@ -11,9 +11,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.aniket.bean.Customer;
@@ -44,12 +46,13 @@ class CustomerController {
 	private BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder(); 
 	
 	@PostMapping("/register")
-	public String register(@ModelAttribute Customer customer, RedirectAttributes ra) {
+	public String register(@ModelAttribute Customer customer, RedirectAttributes ra, HttpSession session) {
 		
 		customer.setPassword(bcrypt.encode(customer.getPassword())); 
 		
 		if(customerService.register(customer)) {
 			ra.addFlashAttribute("msg", "Customer registered successfully"); 
+			session.setAttribute("customer", customer); 
 			return "redirect:/customer/customer-dashboard"; 
 		}
 		else {
@@ -63,9 +66,19 @@ class CustomerController {
 		
 		Customer customer = customerService.findByEmail(email); 
 		
-		if(customer == null || !bcrypt.matches(password, customer.getPassword())) {
-			ra.addFlashAttribute("error", "Invalid eamil or password"); 
-			return "redirect:/login" ; 
+		if(customer == null) {
+			ra.addFlashAttribute("error", "Invalid email or password"); 
+			return "redirect:/login"; 
+		}
+		
+		if(customer.getPassword() == null || customer.getPassword().isBlank()) {
+			ra.addFlashAttribute("error", "This account is linked with Google Sign-In. Please click the Google button below, or use 'Forgot Password' to set a password."); 
+			return "redirect:/login"; 
+		}
+		
+		if(!bcrypt.matches(password, customer.getPassword())) {
+			ra.addFlashAttribute("error", "Invalid email or password"); 
+			return "redirect:/login"; 
 		}
 		
 		session.setAttribute("customer", customer); 
@@ -98,12 +111,48 @@ class CustomerController {
 	
 	
 	@GetMapping("/customer-dashboard")
-	public String customerDashboard(HttpSession session, RedirectAttributes ra) {
-		
-		if(session.getAttribute("customer") == null) {
-			ra.addFlashAttribute("error", "Please Login First"); 
-			return "redirect:/login" ; 
+	public String customerDashboard(HttpSession session, Model m, RedirectAttributes ra) {
+		Customer customer = (Customer) session.getAttribute("customer");
+		if (customer == null) {
+			ra.addFlashAttribute("error", "Please Login First");
+			return "redirect:/login";
 		}
+
+		List<Shipment> allShipments = shipmentService.getAllShipmentByCustomer_id(customer.getEmail(), "All");
+		if (allShipments == null) {
+			allShipments = List.of();
+		}
+
+		long totalCount = allShipments.size();
+		long activeCount = allShipments.stream()
+				.filter(s -> "Pending".equalsIgnoreCase(s.getStatus()) || "InTransit".equalsIgnoreCase(s.getStatus()))
+				.count();
+		long deliveredCount = allShipments.stream()
+				.filter(s -> "Delivered".equalsIgnoreCase(s.getStatus()))
+				.count();
+
+		List<Shipment> recentShipments = allShipments.stream()
+				.sorted((s1, s2) -> Long.compare(s2.getId(), s1.getId()))
+				.limit(5)
+				.toList();
+
+		String aiSummary;
+		if (activeCount > 0) {
+			aiSummary = "You have " + activeCount + " active shipment" + (activeCount > 1 ? "s" : "")
+					+ " moving right now. Live GPS tracking and real-time checkpoint updates are active.";
+		} else if (deliveredCount > 0) {
+			aiSummary = "All your previous shipments have been delivered successfully. Dispatch is ready for your next booking.";
+		} else {
+			aiSummary = "Welcome to ShippSure! Book your first shipment to get instant AI vehicle recommendation and verified driver dispatch.";
+		}
+
+		m.addAttribute("customer", customer);
+		m.addAttribute("shipments", recentShipments);
+		m.addAttribute("totalCount", totalCount);
+		m.addAttribute("activeCount", activeCount);
+		m.addAttribute("deliveredCount", deliveredCount);
+		m.addAttribute("aiSummary", aiSummary);
+
 		return "customer/customer-dashboard";
 	}
 	
@@ -134,7 +183,11 @@ class CustomerController {
 	}
 	
 	@PostMapping("/book-shipment-now")
-	public String bookShipmentNow(@RequestParam String city,@RequestParam String vtype,@RequestParam String pickup_address,@RequestParam String drop_address,@RequestParam String pickup_latitude,@RequestParam String pickup_longitude, @RequestParam String drop_latitude,@RequestParam String drop_longitude, Model m) {
+	public String bookShipmentNow(@RequestParam String city, @RequestParam String vtype, @RequestParam String pickup_address, @RequestParam String drop_address, @RequestParam String pickup_latitude, @RequestParam String pickup_longitude, @RequestParam String drop_latitude, @RequestParam String drop_longitude, Model m, HttpSession session, RedirectAttributes ra) {
+		if (session.getAttribute("customer") == null) {
+			ra.addFlashAttribute("error", "Please Login First");
+			return "redirect:/login";
+		}
 		if (city != null && (city.equalsIgnoreCase("New Delhi") || city.toLowerCase().contains("delhi"))) {
 		    city = "Delhi";
 		}
@@ -154,12 +207,7 @@ class CustomerController {
 				break;
 		}
 		
-		List<Driver> drivers=driverService.getDriversByCityAndStatusAndRideStatus(city,"Activated","Free");
-		Driver driver=null;
-		if(drivers!=null && drivers.size()!=0) {
-			Random random=new Random();
-			driver=drivers.get(random.nextInt(drivers.size()));
-		}
+		Driver driver = driverService.assignBestDriver(vtype, pickup_latitude, pickup_longitude);
 
 		m.addAttribute("driver",driver);
 		m.addAttribute("vtype",vtype);
@@ -176,8 +224,12 @@ class CustomerController {
 
 	
 	@PostMapping("/PayNow")
-	public String PayNow(@ModelAttribute Shipment shipment, HttpSession session) {
-		Customer c = (Customer)session.getAttribute("customer"); 
+	public String PayNow(@ModelAttribute Shipment shipment, HttpSession session, RedirectAttributes ra) {
+		Customer c = (Customer) session.getAttribute("customer"); 
+		if (c == null) {
+			ra.addFlashAttribute("error", "Please login first");
+			return "redirect:/login";
+		}
 		shipment.setCustomer_id(c.getEmail()); 
 		shipment.setCustomer_name(c.getName()); 
 		shipment.setCurrent_latitude(shipment.getPickup_latitude()); 
@@ -185,7 +237,11 @@ class CustomerController {
 		shipment.setPickup_datetime(LocalDateTime.now()); 
 		shipmentService.saveOrder(shipment); 
 		
-		return "redirect:/customer/shipments" ; 
+		if (shipment.getDriver_id() != null && !shipment.getDriver_id().isEmpty()) {
+			driverService.setRideStatus(shipment.getDriver_id());
+		}
+		
+		return "redirect:/customer/shipments"; 
 	}
 	
 	@GetMapping("/shipments")
@@ -198,5 +254,27 @@ class CustomerController {
 		List<Shipment> shipments=shipmentService.getAllShipmentByCustomer_id(c.getEmail(),status==null?"All":status);
 		m.addAttribute("shipments",shipments);
 		return "customer/shipments";
+	}
+	
+	@PostMapping("/GetPrice")
+	public String getPrice(@RequestParam String vtype, @RequestParam String pickup_latitude, @RequestParam String pickup_longitude, @RequestParam String drop_latitude, @RequestParam String drop_longitude, RedirectAttributes ra) {
+	    String sys_prompt = """
+	            Act as Distance Predictor between cities for Logistic application.
+	            You will be provided with latitude-longitude of pickup address and drop address, 
+	            you have to get distance in km between cities of given address by road.
+	            Distance must be strictly in number only. 
+	            Give only one number.
+	            """;
+	    String user_prompt = "Here is the latitude and longitude of pickup address: " + pickup_latitude + " - " + pickup_longitude + " and latitude and longitude of drop address: " + drop_latitude + " - " + drop_longitude;
+	    String result = aiService.askAi(sys_prompt, user_prompt);
+	    
+	    ra.addFlashAttribute("price", result);
+	    return "redirect:/customer/book-shipment-now";
+	}
+	
+	@GetMapping("/shipment/{id}/tracking")
+	@ResponseBody
+	public Shipment getShipmentTracking(@PathVariable Long id) {
+	    return shipmentService.getShipmentById(id); 
 	}
 }

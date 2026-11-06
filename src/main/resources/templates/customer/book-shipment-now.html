@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset="UTF-8">
-	<title>Book Shipment — AI Logistics</title>
+	<title>Book Shipment — ShippSure</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	
 	<meta name="_csrf" th:content="${_csrf.token}">
@@ -23,12 +23,11 @@
 	<div class="app-shell">
 		<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 		<aside class="app-sidebar" id="appSidebar">
-			<a href="customer-dashboard" class="navbar-brand mb-4 d-inline-flex"><span class="brand-mark">AL</span>AI
-				Logistics</a>
+			<a th:href="@{/}" class="navbar-brand mb-4 d-inline-flex"><span class="brand-mark">SS</span>ShippSure</a>
 			<div class="sidebar-section-label">Customer</div>
-			<a href="customer-dashboard" class="sidebar-link"><i class="bi bi-grid-1x2"></i>Dashboard</a> <a
-				href="book-shipment" class="sidebar-link active"><i class="bi bi-box-seam"></i>Book
-				Shipment</a> <a href="shipments" class="sidebar-link"><i class="bi bi-list-ul"></i>My Shipments</a>
+			<a th:href="@{/customer/customer-dashboard}" class="sidebar-link"><i class="bi bi-grid-1x2"></i>Dashboard</a> <a
+				th:href="@{/customer/book-shipment}" class="sidebar-link active"><i class="bi bi-box-seam"></i>Book
+				Shipment</a> <a th:href="@{/customer/shipments}" class="sidebar-link"><i class="bi bi-list-ul"></i>My Shipments</a>
 			<div class="sidebar-section-label">Account</div>
 			<a th:href="@{/logout}" class="sidebar-link logout-link"><i class="bi bi-box-arrow-right"></i>Log out</a>
 		</aside>
@@ -185,7 +184,7 @@
 						                currency: "INR",
 						                order_id: order.id,
 
-						                name: "AI Logistics",
+						                name: "ShippSure",
 						                description: "Shipment Booking",
 
 						                handler: async function(payment) {

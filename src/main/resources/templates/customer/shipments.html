@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Book Shipment — AI Logistics</title>
+    <title>Book Shipment — ShippSure</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link
       rel="stylesheet"
@@ -19,17 +19,17 @@
     <div class="app-shell">
       <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
       <aside class="app-sidebar" id="appSidebar">
-        <a href="customer-dashboard" class="navbar-brand mb-4 d-inline-flex"
-          ><span class="brand-mark">AL</span>AI Logistics</a
+        <a th:href="@{/}" class="navbar-brand mb-4 d-inline-flex"
+          ><span class="brand-mark">SS</span>ShippSure</a
         >
         <div class="sidebar-section-label">Customer</div>
-        <a href="customer-dashboard" class="sidebar-link"
+        <a th:href="@{/customer/customer-dashboard}" class="sidebar-link"
           ><i class="bi bi-grid-1x2"></i>Dashboard</a
         >
-        <a href="book-shipment" class="sidebar-link active"
+        <a th:href="@{/customer/book-shipment}" class="sidebar-link active"
           ><i class="bi bi-box-seam"></i>Book Shipment</a
         >
-        <a href="shipments" class="sidebar-link"
+        <a th:href="@{/customer/shipments}" class="sidebar-link"
           ><i class="bi bi-list-ul"></i>My Shipments</a
         >
         <div class="sidebar-section-label">Account</div>
@@ -125,6 +125,7 @@
                       <a
                         th:if="${shipment.status != 'Delivered' and shipment.status != 'Cancelled'}"
                         class="btn btn-danger"
+                        onclick="return confirm('Are you sure you want to cancel this shipment?');"
                         th:href="@{/shipment/ShipmentStatus(status='Cancelled', id=${shipment.id})}"
                       >
                         Cancel

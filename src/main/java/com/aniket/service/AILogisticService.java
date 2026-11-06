@@ -37,7 +37,7 @@ public class AILogisticService {
 		String link = f_url+"/resetPassword?token=" + token ; 
 		String message = "Click the link to reset Password"+link ; 
 //		mailService.simpleMail(email, "Ai Logistic: Password reset link", message);
-		mailService.htmlMail(email, "AI Logistic: Password reset link", message);
+		mailService.htmlMail(email, "ShippSure: Password reset link", message);
 	}
 	
 //	Situation	-> Returns

@@ -35,3 +35,8 @@ build/
 ### Secrets ###
 .env
 src/main/resources/application.properties
+
+### OS & Logs ###
+*.log
+.DS_Store
+Thumbs.db

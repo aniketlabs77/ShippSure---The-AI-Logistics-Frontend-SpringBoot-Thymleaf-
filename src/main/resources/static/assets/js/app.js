@@ -53,14 +53,7 @@ function initSidebarToggle(){
 }
 
 function wireLogout(selector='.logout-link'){
-  document.querySelectorAll(selector).forEach(el => {
-    el.addEventListener('click', (e) => {
-      e.preventDefault();
-      Store.logout();
-      const path = window.location.pathname;
-      window.location.href = (path.includes('/customer/') || path.includes('/driver/') || path.includes('/admin/')) ? '../login.html' : 'login.html';
-    });
-  });
+  // No-op: Spring Boot /logout controller handles session invalidation natively.
 }
 
 function paintUserChip(nameSelector, chipSelector){

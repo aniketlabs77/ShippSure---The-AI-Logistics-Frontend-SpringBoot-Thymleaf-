@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Drivers — AI Logistics Admin</title>
+    <title>Drivers — ShippSure Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- Bootstrap -->
@@ -28,15 +28,14 @@
     <!-- Sidebar -->
     <aside class="app-sidebar" id="appSidebar">
 
-        <a href="admin-dashboard" class="navbar-brand mb-4 d-inline-flex">
-            <span class="brand-mark">AL</span>
-            AI Logistics
+        <a th:href="@{/}" class="navbar-brand mb-4 d-inline-flex">
+            <span class="brand-mark">SS</span>ShippSure
         </a>
 
         <div class="sidebar-section-label">Admin</div>
 
         <!-- Dashboard -->
-        <a href="admin-dashboard" class="sidebar-link">
+        <a th:href="@{/admin/admin-dashboard}" class="sidebar-link">
             <i class="bi bi-grid-1x2"></i>
             Dashboard
         </a>
@@ -91,8 +90,8 @@
 
                 <!-- All -->
                 <a th:href="@{/admin/drivers}"
-                   class="btn btn-sm btn-ghost-light active"
-                   data-filter="all">
+                   th:classappend="${currentStatus == 'All' or currentStatus == null} ? 'btn-amber' : 'btn-ghost-light'"
+                   class="btn btn-sm">
 
                     All
 
@@ -101,8 +100,8 @@
 
                 <!-- Pending -->
                 <a th:href="@{/admin/drivers(status='Pending')}"
-                   class="btn btn-sm btn-ghost-light"
-                   data-filter="pending">
+                   th:classappend="${currentStatus == 'Pending'} ? 'btn-amber' : 'btn-ghost-light'"
+                   class="btn btn-sm">
 
                     Pending
 
@@ -111,8 +110,8 @@
 
                 <!-- Activated -->
                 <a th:href="@{/admin/drivers(status='Activated')}"
-                   class="btn btn-sm btn-ghost-light"
-                   data-filter="approved">
+                   th:classappend="${currentStatus == 'Activated'} ? 'btn-amber' : 'btn-ghost-light'"
+                   class="btn btn-sm">
 
                     Approved
 
@@ -121,8 +120,8 @@
 
                 <!-- Rejected -->
                 <a th:href="@{/admin/drivers(status='Rejected')}"
-                   class="btn btn-sm btn-ghost-light"
-                   data-filter="rejected">
+                   th:classappend="${currentStatus == 'Rejected'} ? 'btn-amber' : 'btn-ghost-light'"
+                   class="btn btn-sm">
 
                     Rejected
 
